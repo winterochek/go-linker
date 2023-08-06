@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 	. "github.com/samber/mo"
@@ -40,6 +41,18 @@ func HandleShorten(shortener shortener) echo.HandlerFunc {
 			return err
 		}
 
+		userToken, ok := c.Get("user").(*jwt.Token)
+		if !ok {
+			log.Printf("failed to cast user to *jwt.Token")
+			return echo.NewHTTPError(http.StatusInternalServerError)
+		}
+
+		userClaims, ok := userToken.Claims.(*model.UserClaims)
+		if !ok {
+			log.Printf("failed to cast claims to *model.UserClaims")
+			return echo.NewHTTPError(http.StatusInternalServerError)
+		}
+
 		identifier := None[string]()
 		if strings.TrimSpace(req.Identifier) != "" {
 			identifier = Some(req.Identifier)
@@ -48,6 +61,7 @@ func HandleShorten(shortener shortener) echo.HandlerFunc {
 		input := model.ShortenInput{
 			RawURL:     req.URL,
 			Identifier: identifier,
+			CreatedBy:  userClaims.User.GitHubLogin,
 		}
 
 		shortening, err := shortener.Shorten(c.Request().Context(), input)

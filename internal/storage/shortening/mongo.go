@@ -3,10 +3,10 @@ package shortening
 import (
 	"context"
 	"fmt"
-	"time"
 	"github.com/winterochek/go-linker/internal/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 )
 
 type mgo struct {
@@ -82,6 +82,7 @@ func (m *mgo) IncrementVisits(ctx context.Context, shorteningID string) error {
 
 type mgoShortening struct {
 	Identifier  string    `bson:"_id"`
+	CreatedBy   string    `bson:"created_by"`
 	OriginalURL string    `bson:"original_url"`
 	Visits      int64     `bson:"visits"`
 	CreatedAt   time.Time `bson:"created_at"`
@@ -95,13 +96,14 @@ func mgoShorteningFromModel(shortening model.Shortening) mgoShortening {
 		Visits:      shortening.Visits,
 		CreatedAt:   shortening.CreatedAt,
 		UpdatedAt:   shortening.UpdatedAt,
+		CreatedBy:   shortening.CreatedBy,
 	}
 }
 
 func modelShorteningFromMgo(shortening mgoShortening) *model.Shortening {
 	return &model.Shortening{
 		Identifier: shortening.Identifier,
-		// CreatedBy:   shortening.CreatedBy,
+		CreatedBy:   shortening.CreatedBy,
 		OriginalURL: shortening.OriginalURL,
 		Visits:      shortening.Visits,
 		CreatedAt:   shortening.CreatedAt,

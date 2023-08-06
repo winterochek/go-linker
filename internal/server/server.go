@@ -6,6 +6,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/winterochek/go-linker/internal/config"
+	"github.com/winterochek/go-linker/internal/model"
 	"github.com/winterochek/go-linker/internal/shorten"
 )
 
@@ -40,6 +42,7 @@ func (s *Server) setupRouter() {
 
 	restricted := s.e.Group("/api")
 	{
+		restricted.Use(middleware.JWTWithConfig(makeJWTConfig()))
 		restricted.POST("/shorten", HandleShorten(s.shortener))
 	}
 
@@ -61,4 +64,14 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func makeJWTConfig() middleware.JWTConfig {
+	return middleware.JWTConfig{
+		Claims:     &model.UserClaims{},
+		SigningKey: []byte(config.Get().Auth.JWTSecretKey),
+		ErrorHandler: func(err error) error {
+			return echo.NewHTTPError(http.StatusUnauthorized)
+		},
+	}
 }
