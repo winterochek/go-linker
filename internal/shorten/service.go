@@ -2,8 +2,8 @@ package shorten
 
 import (
 	"context"
-	"github.com/winterochek/go-linker/internal/model"
 	"github.com/google/uuid"
+	"github.com/winterochek/go-linker/internal/model"
 )
 
 type Storage interface {
@@ -36,4 +36,20 @@ func (s *Service) Shorten(ctx context.Context, input model.ShortenInput) (*model
 		return nil, err
 	}
 	return shortening, nil
+}
+
+func (s *Service) Redirect(ctx context.Context, identifier string) (string, error) {
+	// Get original URL
+	shortening, err := s.storage.Get(ctx, identifier)
+	if err != nil {
+		return "", err
+	}
+
+	// increase views count
+	if err := s.storage.IncrementVisits(ctx, identifier); err != nil {
+		return "", err
+	}
+
+	return shortening.OriginalURL, nil
+
 }

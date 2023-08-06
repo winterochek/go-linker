@@ -3,7 +3,9 @@ package server
 import (
 	"context"
 	"net/http"
+
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/winterochek/go-linker/internal/shorten"
 )
 
@@ -32,6 +34,18 @@ func (s *Server) setupRouter() {
 	s.e = echo.New()
 	s.e.HideBanner = true
 	s.e.Validator = NewValidator()
+
+	s.e.Pre(middleware.RemoveTrailingSlash())
+	s.e.Pre(middleware.RequestID())
+
+	restricted := s.e.Group("/api")
+	{
+		restricted.POST("/shorten", HandleShorten(s.shortener))
+	}
+
+	s.e.GET("/:identifier", HandleRedirect(s.shortener))
+
+	s.AddCloser(s.e.Shutdown)
 
 }
 
